@@ -1,5 +1,22 @@
 from scapy.all import *
 from scapy.layers.dot11 import *
+import threading
+import os
+
+INTERFACE_NAME = 'wlan0mon'
+START_CHANNEL = 1
+
+def change_channel():
+    # Periodically change channels to discover all available networks
+    channel = START_CHANNEL
+
+    while True:
+        print(f'Switched channel to channel {channel}')
+        os.system(f'sudo iwconfig {INTERFACE_NAME} channel {channel}')
+        # 2.4GHz WiFi supports 14 channels according to https://en.wikipedia.org/wiki/List_of_WLAN_channels
+        channel = channel % 14 + 1
+        time.sleep(2)
+
 
 def handle_beacon(pkt):
 
@@ -11,4 +28,9 @@ def handle_beacon(pkt):
         print(f'BSSID: {bssid} SSID: {ssid}')
 
 
-sniff(iface="wlan0mon", prn=handle_beacon, store=0)
+print('Starting channel change thread')
+channel_thread = threading.Thread(target=change_channel)
+channel_thread.start()
+
+print('Sniffing...')
+sniff(iface=INTERFACE_NAME, prn=handle_beacon, store=0)
