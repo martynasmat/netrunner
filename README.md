@@ -6,7 +6,7 @@
 
 **About**
 
-This is a work-in-progress tool for learning about WiFi security. More features coming soon (hopefully).
+This is a work-in-progress tool I created to learn more about wireless networks and WiFi security. More features coming soon (hopefully).
 
 **Current Features:**
 
