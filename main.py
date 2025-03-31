@@ -6,9 +6,24 @@ from change_channel import change_channel
 INTERFACE_NAME = 'wlan0mon'
 START_CHANNEL = 1
 
+class AccessPoint():
+    
+    def __init__(self, ssid, bssid):
+        self.ssid = ssid
+        self.bssid = bssid
+        self.clients = []
+
+
 def handle_beacon(pkt):
     bssid = pkt[Dot11].addr3
     ssid = pkt[Dot11Elt].info.decode()
+
+    if bssid not in ap_bssids:
+        ap_bssids.add(bssid)
+        ap = AccessPoint(ssid, bssid)
+        access_points.append(ap)
+        ap_map[bssid] = ap
+    
     print(f'BSSID: {bssid} SSID: {ssid}')
 
 
@@ -43,6 +58,12 @@ def handle_packet(pkt):
         print(pkt[Dot11].addr2)
         print(pkt[Dot11].addr3)
 
+
+access_points = []
+# Access point MAC addresses
+ap_bssids = set()
+# BSSID:AccessPoint
+ap_map = {}
 
 print('Starting channel change thread')
 channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME))
