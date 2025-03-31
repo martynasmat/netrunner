@@ -2,6 +2,7 @@ from scapy.all import *
 from scapy.layers.dot11 import *
 import threading
 from change_channel import change_channel
+import gui
 
 INTERFACE_NAME = 'wlan0mon'
 START_CHANNEL = 1
@@ -11,6 +12,7 @@ class AccessPoint():
     def __init__(self, ssid, bssid):
         self.ssid = ssid
         self.bssid = bssid
+        # List of clients (possibly) connected to the AP
         self.clients = []
 
 
@@ -23,8 +25,10 @@ def handle_beacon(pkt):
         ap = AccessPoint(ssid, bssid)
         access_points.append(ap)
         ap_map[bssid] = ap
-    
-    print(f'BSSID: {bssid} SSID: {ssid}')
+
+
+def get_aps():
+    return access_points
 
 
 def handle_packet(pkt):
@@ -52,11 +56,10 @@ def handle_packet(pkt):
                 source = pkt[Dot11].addr2
                 destination = pkt[Dot11].addr3
                 print(f'QoS data frame / Source {source} / Destination {destination}')
-        
-        print(pkt)
-        print(pkt.subtype)
-        print(pkt[Dot11].addr2)
-        print(pkt[Dot11].addr3)
+
+
+def start_sniffing():
+    sniff(iface=INTERFACE_NAME, prn=handle_packet, store=0)
 
 
 access_points = []
@@ -65,9 +68,14 @@ ap_bssids = set()
 # BSSID:AccessPoint
 ap_map = {}
 
-print('Starting channel change thread')
+print('Starting GUI thread')
+gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps,))
+gui_thread.start()
+
+print('Starting sniffing thread')
+sniff_thread = threading.Thread(target=start_sniffing)
+sniff_thread.start()
+
+print('Starting channel switching thread')
 channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME))
 channel_thread.start()
-
-print('Sniffing...')
-sniff(iface=INTERFACE_NAME, prn=handle_packet, store=0)
