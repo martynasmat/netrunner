@@ -53,7 +53,15 @@ def handle_packet(pkt):
         if ssid:
             ap = ssid_map[ssid]
             if ssid not in ap.clients: 
-                ap.clients.append(pkt[Dot11ProbeReq.addr2])
+                ap.add_client(pkt[Dot11].addr2)
+
+    # Handle association requests
+    elif pkt.haslayer(Dot11AssoReq) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 0:
+        print(pkt)
+        source = pkt[Dot11].addr2
+        bssid = pkt[Dot11].addr1
+        if bssid in bssid_map and source not in bssid_map[bssid].clients:
+            bssid_map[bssid].add_client(source)
 
     # Handle data frames
     elif pkt.haslayer(Dot11) and pkt[Dot11].type == 2:
@@ -84,7 +92,7 @@ def process_client_data_frame(src, dest):
 
 
 def start_sniffing():
-    sniff(iface=INTERFACE_NAME, prn=handle_packet, store=0)
+    sniff(iface=INTERFACE_NAME, prn=handle_packet, store=False)
 
 
 access_points = []
@@ -92,6 +100,7 @@ access_points = []
 ap_bssids = set()
 # BSSID:AccessPoint
 bssid_map = {}
+# SSID:AccessPoint
 ssid_map = {}
 
 print('Starting GUI thread')
