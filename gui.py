@@ -19,7 +19,7 @@ def start_gui(update_callback):
 
             # Display APs
             for idx, ap in enumerate(ap_list, start=3):
-                stdscr.addstr(idx, 0, f"{idx-2}. {ap.ssid} ({ap.bssid})")
+                stdscr.addstr(idx, 0, f"{idx-2}. {ap.ssid} ({ap.bssid}) {ap.signal_strength} {len(ap.clients)}")
 
             # Handle user input
             key = stdscr.getch()
