@@ -9,7 +9,7 @@ START_CHANNEL = 1
 
 class AccessPoint():
     
-    def __init__(self, ssid, bssid, signal_strength=None):
+    def __init__(self, ssid, bssid, signal_strength=0):
         self.ssid = ssid
         self.bssid = bssid
         # List of clients (possibly) connected to the AP
@@ -27,6 +27,10 @@ def handle_beacon(pkt):
     bssid = pkt[Dot11].addr3
     ssid = pkt[Dot11Elt].info.decode()
     signal_strength = pkt[RadioTap].dBm_AntSignal
+
+    # Some APs have hidden SSIDs
+    if not ssid:
+        ssid = 'HIDDEN SSID'
 
     if bssid not in ap_bssids:
         ap_bssids.add(bssid)
@@ -49,11 +53,14 @@ def handle_packet(pkt):
 
     # Handle probe requests
     elif pkt.haslayer(Dot11ProbeReq) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 4:
-        ssid = pkt[Dot11ProbeReq].info.decode()
-        if ssid:
-            ap = ssid_map[ssid]
-            if ssid not in ap.clients: 
-                ap.add_client(pkt[Dot11].addr2)
+        try:
+            ssid = pkt[Dot11ProbeReq].info.decode()
+            if ssid:
+                ap = ssid_map.get(ssid)
+                if ap and pkt[Dot11].addr2 not in ap.clients: 
+                    ap.add_client(pkt[Dot11].addr2)
+        except Exception as e:
+            print(f'failed {e}')
 
     # Handle association requests
     elif pkt.haslayer(Dot11AssoReq) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 0:

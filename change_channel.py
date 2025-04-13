@@ -1,7 +1,7 @@
 import os
 import time
 
-SWITCH_TIME = 3
+SWITCH_TIME = 0.25
 
 def change_channel(channel_arg, interface):
     # Periodically change channels to discover all available networks
