@@ -6,6 +6,12 @@ import scapy.packet
 from change_channel import change_channel
 import gui
 
+# TODO:
+# Support other types of frames to identify clients
+# Show number of packets sent
+# Show security standard
+# Capture handshakes
+
 INTERFACE_NAME = 'wlan0mon'
 START_CHANNEL = 1
 
