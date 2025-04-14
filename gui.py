@@ -69,19 +69,23 @@ def start_gui(update_callback, deauth_callback, stop_event):
 
     def deauth_menu(stdscr, selected):
         loop = True
-        stdscr.timeout(1000)
+        stdscr.timeout(500)
+        period = 0
 
         deauth_callback(selected)
 
         while loop:
+            period = period % 4
             stdscr.addstr(0, 0, "Netrunner - WiFi Scanner (WIP)", curses.A_BOLD)
             stdscr.addstr(1, 0, "Press 'q' to exit")
-            stdscr.addstr(3, 0, f"Deauthing {selected.ssid} ({selected.bssid})...")
+            stdscr.addstr(3, 0, f"Deauthing {selected.ssid} ({selected.bssid}){period * '.'}")
 
             key = stdscr.getch()
             if key == ord('q'):
                 loop = False
-
+            
+            period += 1
+            stdscr.erase()
             stdscr.refresh()
 
     curses.wrapper(draw_menu)
