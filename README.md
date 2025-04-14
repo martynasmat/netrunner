@@ -14,3 +14,8 @@ This is a work-in-progress tool I created to learn more about wireless networks 
 - Identify clients connected to APs
 - Select an AP from list
 - Send deauthentication frames to selected AP and its' clients
+
+**Short Demonstration**
+
+https://github.com/user-attachments/assets/1a6a720b-19fc-4895-8c14-00902ec2377b
+
