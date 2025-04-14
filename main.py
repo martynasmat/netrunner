@@ -120,3 +120,6 @@ sniff_thread.start()
 print('Starting channel switching thread')
 channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME, stop_sniffing,))
 channel_thread.start()
+
+sniff_thread.join()
+channel_thread.join()

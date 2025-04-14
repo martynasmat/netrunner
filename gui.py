@@ -7,6 +7,7 @@ def start_gui(update_callback, stop_event):
         stdscr.nodelay(1)
         stdscr.timeout(100)  # Refresh rate (milliseconds)
         last_row = 2
+        footer = "Press Enter to stop scanning networks"
         
         ap_list = []
 
@@ -20,13 +21,13 @@ def start_gui(update_callback, stop_event):
 
             # Display APs
             for idx, ap in enumerate(ap_list, start=3):
-                line = f"{idx-2}. {ap.ssid} ({ap.bssid}) {ap.signal_strength} dBm | Clients: {len(ap.clients)}"
+                line = f"{idx-2:3}. {ap.ssid:25} | MAC: ({ap.bssid}) | {ap.signal_strength} dBm | Clients: {len(ap.clients)}"
                 stdscr.addstr(idx, 0, line)  # truncate if needed
                 last_row = idx
                 if idx >= stdscr.getmaxyx()[0]:
                     break
 
-            stdscr.addstr(last_row+2, 0, "Press Enter to stop scanning networks")
+            stdscr.addstr(last_row+2, 0, footer)
 
 
             # Handle user input
@@ -36,6 +37,7 @@ def start_gui(update_callback, stop_event):
 
             elif key == ord('\n'):
                 stop_event.set()
+                footer = "Select a network to deauthenticate: "
 
             stdscr.refresh()
 
