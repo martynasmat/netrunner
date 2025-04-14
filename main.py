@@ -53,14 +53,11 @@ def handle_packet(pkt):
 
     # Handle probe requests
     elif pkt.haslayer(Dot11ProbeReq) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 4:
-        try:
-            ssid = pkt[Dot11ProbeReq].info.decode()
-            if ssid:
-                ap = ssid_map.get(ssid)
-                if ap and pkt[Dot11].addr2 not in ap.clients: 
-                    ap.add_client(pkt[Dot11].addr2)
-        except Exception as e:
-            print(f'failed {e}')
+        ssid = pkt[Dot11ProbeReq].info.decode()
+        if ssid:
+            ap = ssid_map.get(ssid)
+            if ap and pkt[Dot11].addr2 not in ap.clients: 
+                ap.add_client(pkt[Dot11].addr2)
 
     # Handle association requests
     elif pkt.haslayer(Dot11AssoReq) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 0:
@@ -99,7 +96,7 @@ def process_client_data_frame(src, dest):
 
 
 def start_sniffing():
-    sniff(iface=INTERFACE_NAME, prn=handle_packet, store=False)
+    sniff(iface=INTERFACE_NAME, prn=handle_packet, store=False, stop_filter=lambda x: stop_sniffing.is_set())
 
 
 access_points = []
@@ -110,8 +107,10 @@ bssid_map = {}
 # SSID:AccessPoint
 ssid_map = {}
 
+stop_sniffing = threading.Event()
+
 print('Starting GUI thread')
-gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps,))
+gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, stop_sniffing,))
 gui_thread.start()
 
 print('Starting sniffing thread')
@@ -119,5 +118,5 @@ sniff_thread = threading.Thread(target=start_sniffing)
 sniff_thread.start()
 
 print('Starting channel switching thread')
-channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME))
+channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME, stop_sniffing,))
 channel_thread.start()
