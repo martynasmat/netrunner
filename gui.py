@@ -2,16 +2,18 @@ import curses
 
 def start_gui(update_callback, stop_event):
 
-    def draw_menu(stdscr, update_callback, stop_event):
+    def draw_menu(stdscr):
         curses.curs_set(0)
         stdscr.nodelay(1)
         stdscr.timeout(100)  # Refresh rate (milliseconds)
-        last_row = 2
-        footer = "Press Enter to stop scanning networks"
-        
-        ap_list = []
+        scanning_menu(stdscr)
 
-        while True:
+    def scanning_menu(stdscr):
+        last_row = 2
+        ap_list = []
+        loop = True
+
+        while loop:
             stdscr.clear()
             stdscr.addstr(0, 0, "Netrunner - WiFi Scanner (WIP)", curses.A_BOLD)
             stdscr.addstr(1, 0, "Press 'q' to exit")
@@ -27,7 +29,7 @@ def start_gui(update_callback, stop_event):
                 if idx >= stdscr.getmaxyx()[0]:
                     break
 
-            stdscr.addstr(last_row+2, 0, footer)
+            stdscr.addstr(last_row+2, 0, "Press Enter to stop scanning networks")
 
 
             # Handle user input
@@ -37,8 +39,38 @@ def start_gui(update_callback, stop_event):
 
             elif key == ord('\n'):
                 stop_event.set()
-                footer = "Select a network to deauthenticate: "
+                stdscr.nodelay(0)  # Turn blocking input back on for user input
+                stdscr.timeout(-1)
+
+                # Show cursor to input number
+                curses.curs_set(1)
+                curses.echo()
+                stdscr.addstr(min(stdscr.getmaxyx()[0] - 1, len(ap_list) + 5), 0, "AP #: ")
+                try:
+                    choice = stdscr.getstr().decode().strip()
+                    index = int(choice)
+                    if 0 <= index < len(ap_list):
+                        selected_ap = ap_list[index]
+                    else:
+                        footer = "Invalid selection."
+                except Exception:
+                    footer = "Error reading input."
+                curses.noecho()
+                curses.curs_set(0)
+                stdscr.nodelay(1)
+                stdscr.timeout(100)
+                stdscr.clear()
+                loop = False
 
             stdscr.refresh()
+        
+        deauth_menu(stdscr, selected_ap.ssid)
 
-    curses.wrapper(draw_menu, update_callback, stop_event)
+    def deauth_menu(stdscr, selected):
+        loop = True
+
+        while loop:
+            stdscr.addstr(1, 0, selected)
+            stdscr.refresh()
+
+    curses.wrapper(draw_menu)
