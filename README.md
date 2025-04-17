@@ -14,3 +14,8 @@ This is a work-in-progress tool I created to learn more about wireless networks 
 - Identify clients connected to APs
 - Select an AP from list
 - Send deauthentication frames to selected AP and its' clients
+
+
+**Short Demonstration**
+
+![](demo/netrunner demo - Copy - Copy.mp4)
