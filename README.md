@@ -12,10 +12,9 @@ This is a work-in-progress tool I created to learn more about wireless networks 
 
 - Scan for nearby access points
 - Identify clients connected to APs
-- Select an AP from list
+- Select an AP
 - Send deauthentication frames to selected AP and its' clients
-
-<<<<<<< HEAD
+- Capture EAPOL frames associated with selected AP
 
 **Short Demonstration**
 
