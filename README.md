@@ -15,7 +15,14 @@ This is a work-in-progress tool I created to learn more about wireless networks 
 - Select an AP from list
 - Send deauthentication frames to selected AP and its' clients
 
+<<<<<<< HEAD
 
 **Short Demonstration**
 
 ![](demo/netrunner demo - Copy - Copy.mp4)
+=======
+**Short Demonstration**
+
+https://github.com/user-attachments/assets/1a6a720b-19fc-4895-8c14-00902ec2377b
+
+>>>>>>> 49e21f4c432920c4fa9a0c80f50557e7566ccf49

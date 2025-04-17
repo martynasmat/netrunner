@@ -1,6 +1,8 @@
 import curses
+from change_channel import *
 
-def start_gui(update_callback, deauth_callback, stop_event):
+
+def start_gui(update_callback, deauth_callback, stop_sniffing, stop_changing_channel, stop_deauthing_event):
 
     def draw_menu(stdscr):
         curses.curs_set(0)
@@ -38,7 +40,8 @@ def start_gui(update_callback, deauth_callback, stop_event):
                 loop = False
 
             elif key == ord('\n'):
-                stop_event.set()
+                stop_sniffing.set()
+                stop_changing_channel.set()
                 stdscr.nodelay(0)  # Turn blocking input back on for user input
                 stdscr.timeout(-1)
 
@@ -72,20 +75,40 @@ def start_gui(update_callback, deauth_callback, stop_event):
         stdscr.timeout(500)
         period = 0
 
-        deauth_callback(selected)
+        thread = deauth_callback(selected, stop_deauthing_event)
+        thread.start()
 
         while loop:
             period = period % 4
-            stdscr.addstr(0, 0, "Netrunner - WiFi Scanner (WIP)", curses.A_BOLD)
+            stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
             stdscr.addstr(1, 0, "Press 'q' to exit")
             stdscr.addstr(3, 0, f"Deauthing {selected.ssid} ({selected.bssid}){period * '.'}")
+            stdscr.addstr(4, 0, f"Press Enter to stop deauthing and listen for handshakes")
 
             key = stdscr.getch()
             if key == ord('q'):
                 loop = False
-            
+            elif key == ord('\n'):
+                stop_deauthing_event.set()
+
             period += 1
             stdscr.erase()
             stdscr.refresh()
 
+
+    def handshake_menu(stdscr, ap):
+        loop = True
+        stdscr.timeout(500)
+        lock_channel(ap.channel)
+
+        while loop:
+            stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
+            stdscr.addstr(1, 0, "Press 'q' to exit")
+
+            key = stdscr.getch()
+            if key == ord('q'):
+                loop = False
+
+            stdscr.clear()
+            stdscr.refresh()
     curses.wrapper(draw_menu)

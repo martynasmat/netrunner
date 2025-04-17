@@ -12,3 +12,8 @@ def change_channel(channel_arg, interface, stop_event):
         # 2.4GHz WiFi supports 14 channels according to https://en.wikipedia.org/wiki/List_of_WLAN_channels
         channel = channel % 14 + 1
         time.sleep(SWITCH_TIME)
+
+
+def lock_channel(channel, interface):
+    # Locks to one channel
+    os.system(f'sudo iwconfig {interface} channel {channel}')
