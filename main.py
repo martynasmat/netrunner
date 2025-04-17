@@ -16,6 +16,24 @@ import gui
 INTERFACE_NAME = 'wlan0mon'
 START_CHANNEL = 1
 
+# Map 2.4GHz frequencies to channels
+CHANNEL_TABLE = {
+    2412: 1,
+    2417: 2,
+    2422: 3,
+    2427: 4,
+    2432: 5,
+    2437: 6,
+    2442: 7,
+    2447: 8,
+    2452: 9,
+    2457: 10,
+    2462: 11,
+    2467: 12,
+    2472: 13,
+    2484: 14,
+}
+
 class AccessPoint():
     
     def __init__(self, ssid, bssid, signal_strength=0, channel=1):
@@ -26,10 +44,10 @@ class AccessPoint():
         self.signal_strength = signal_strength
         self.channel = channel
         self.eapol_messages = {
-            1: [],
-            2: [],
-            3: [],
-            4: [],
+            1: None,
+            2: None,
+            3: None,
+            4: None,
         }
 
     def update_signal_strength(self, dbm):
@@ -43,7 +61,7 @@ def handle_beacon(pkt):
     bssid = pkt[Dot11].addr3
     ssid = pkt[Dot11Elt].info.decode()
     signal_strength = pkt[RadioTap].dBm_AntSignal
-    channel = pkt[RadioTap].Channel
+    channel = CHANNEL_TABLE[pkt[RadioTap].Channel]
 
     # Some APs have hidden SSIDs
     if not ssid:
@@ -68,6 +86,11 @@ def handle_packet(pkt):
     if pkt.haslayer(Dot11Beacon) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 8:
         handle_beacon(pkt)
 
+        # Handle EAPOL frame (handshake)
+    elif pkt.haslayer(EAPOL):
+        print(pkt.summary())
+        process_eapol(pkt)
+
     # Handle probe requests
     elif pkt.haslayer(Dot11ProbeReq) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 4:
         ssid = pkt[Dot11ProbeReq].info.decode()
@@ -78,7 +101,6 @@ def handle_packet(pkt):
 
     # Handle association requests
     elif pkt.haslayer(Dot11AssoReq) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 0:
-        print(pkt)
         source = pkt[Dot11].addr2
         bssid = pkt[Dot11].addr1
         if bssid in bssid_map and source not in bssid_map[bssid].clients:
@@ -105,19 +127,14 @@ def handle_packet(pkt):
                 destination = pkt[Dot11].addr3
                 process_client_data_frame(source, destination)
 
-    # Handle EAPOL frame (handshake)
-    elif pkt.haslayer(EAPOL):
-        print(pkt)
-        match pkt[EAPOL].type:
-            # Distinguish different message types
-            case 1:
-                pass
-            case 2:
-                pass
-            case 3:
-                pass
-            case 4:
-                pass
+
+def process_eapol(pkt):
+    if pkt[Dot11].addr1 in bssid_map:
+        bssid_map[pkt[Dot11].addr1].eapol_messages[pkt[EAPOL].type] = pkt
+    elif pkt[Dot11].addr2 in bssid_map:
+        bssid_map[pkt[Dot11].addr2].eapol_messages[pkt[EAPOL].type] = pkt
+    elif pkt[Dot11].addr3 in bssid_map:
+        bssid_map[pkt[Dot11].addr3].eapol_messages[pkt[EAPOL].type] = pkt
 
 
 def process_client_data_frame(src, dest):
@@ -128,6 +145,10 @@ def process_client_data_frame(src, dest):
 
 def start_sniffing():
     sniff(iface=INTERFACE_NAME, prn=handle_packet, store=False, stop_filter=lambda x: stop_sniffing.is_set())
+
+
+def create_sniff_thread():
+    return threading.Thread(target=start_sniffing)
 
 
 def deauth(ap, stop):
@@ -156,13 +177,13 @@ stop_sniffing = threading.Event()
 stop_changing_channel = threading.Event()
 stop_deauthing = threading.Event()
 
-# print('Starting GUI thread')
-# gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, deauth_thread, stop_sniffing, stop_changing_channel, stop_deauthing,))
-# gui_thread.start()
-
 print('Starting sniffing thread')
-sniff_thread = threading.Thread(target=start_sniffing)
+sniff_thread = create_sniff_thread()
 sniff_thread.start()
+
+print('Starting GUI thread')
+gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, deauth_thread, INTERFACE_NAME, stop_sniffing, create_sniff_thread, stop_changing_channel, stop_deauthing,))
+gui_thread.start()
 
 print('Starting channel switching thread')
 channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME, stop_changing_channel,))

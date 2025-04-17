@@ -2,7 +2,7 @@ import curses
 from change_channel import *
 
 
-def start_gui(update_callback, deauth_callback, stop_sniffing, stop_changing_channel, stop_deauthing_event):
+def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create_sniff_thread, stop_changing_channel, stop_deauthing_event):
 
     def draw_menu(stdscr):
         curses.curs_set(0)
@@ -25,7 +25,7 @@ def start_gui(update_callback, deauth_callback, stop_sniffing, stop_changing_cha
 
             # Display APs
             for idx, ap in enumerate(ap_list, start=3):
-                line = f"{idx-2:3}. {ap.ssid:25} | MAC: ({ap.bssid}) | {ap.signal_strength} dBm | Clients: {len(ap.clients)}"
+                line = f"{idx-2:3}. {ap.ssid:25} | MAC: ({ap.bssid}) | {ap.signal_strength} dBm | Clients: {len(ap.clients)} | Channel: {ap.channel}"
                 stdscr.addstr(idx, 0, line)  # truncate if needed
                 last_row = idx
                 if idx >= stdscr.getmaxyx()[0]:
@@ -90,20 +90,30 @@ def start_gui(update_callback, deauth_callback, stop_sniffing, stop_changing_cha
                 loop = False
             elif key == ord('\n'):
                 stop_deauthing_event.set()
+                handshake_menu(stdscr, selected)
 
             period += 1
             stdscr.erase()
             stdscr.refresh()
 
-
     def handshake_menu(stdscr, ap):
         loop = True
+        stdscr.clear()
         stdscr.timeout(500)
-        lock_channel(ap.channel)
+        lock_channel(ap.channel, interface)
+        stop_sniffing.clear()
+        thread = create_sniff_thread()
+        thread.start()
 
         while loop:
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
             stdscr.addstr(1, 0, "Press 'q' to exit")
+            stdscr.addstr(3, 0, f"{ap.ssid} ({ap.bssid}) EAPOL messages captured:")
+            i = 0
+            for key, pkt in ap.eapol_messages.items():
+                if pkt:
+                    i += 1
+                    stdscr.addstr(i + 4, 0, f"Message type: {key} | ")
 
             key = stdscr.getch()
             if key == ord('q'):
@@ -111,4 +121,6 @@ def start_gui(update_callback, deauth_callback, stop_sniffing, stop_changing_cha
 
             stdscr.clear()
             stdscr.refresh()
+
+
     curses.wrapper(draw_menu)
