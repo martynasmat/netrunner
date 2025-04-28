@@ -2,7 +2,7 @@ import curses
 from change_channel import *
 
 
-def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create_sniff_thread, stop_changing_channel, stop_deauthing_event):
+def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create_sniff_thread, stop_changing_channel, stop_deauthing_event, save_capture):
 
     def draw_menu(stdscr):
         curses.curs_set(0)
@@ -107,17 +107,20 @@ def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create
 
         while loop:
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
-            stdscr.addstr(1, 0, "Press 'q' to exit")
-            stdscr.addstr(3, 0, f"{ap.ssid} ({ap.bssid}) EAPOL messages captured:")
+            stdscr.addstr(2, 0, "Press 'q' to exit")
+            stdscr.addstr(3, 0, f"Press Enter to save captured packets")
+            stdscr.addstr(4, 0, f"{ap.ssid} ({ap.bssid}) EAPOL messages captured:")
             i = 0
             for key, pkt in ap.eapol_messages.items():
                 if pkt:
                     i += 1
-                    stdscr.addstr(i + 4, 0, f"Message type: {key} | ")
+                    stdscr.addstr(i + 5, 0, f"Message type: {key}")
 
             key = stdscr.getch()
             if key == ord('q'):
                 loop = False
+            elif key == ord('\n'):
+                save_capture(ap)
 
             stdscr.clear()
             stdscr.refresh()

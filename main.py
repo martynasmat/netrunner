@@ -36,7 +36,7 @@ CHANNEL_TABLE = {
 
 class AccessPoint():
     
-    def __init__(self, ssid, bssid, signal_strength=0, channel=1):
+    def __init__(self, ssid, bssid, signal_strength=0, channel=1, beacon=None):
         self.ssid = ssid
         self.bssid = bssid
         # List of clients (possibly) connected to the AP
@@ -49,6 +49,7 @@ class AccessPoint():
             3: None,
             4: None,
         }
+        self.beacon = beacon
 
     def update_signal_strength(self, dbm):
         self.signal_strength = dbm
@@ -69,7 +70,7 @@ def handle_beacon(pkt):
 
     if bssid not in ap_bssids:
         ap_bssids.add(bssid)
-        ap = AccessPoint(ssid, bssid, signal_strength, channel)
+        ap = AccessPoint(ssid, bssid, signal_strength, channel, pkt)
         access_points.append(ap)
         bssid_map[bssid] = ap
         ssid_map[ssid] = ap
@@ -81,14 +82,20 @@ def get_aps():
     return access_points
 
 
+def save_capture(ap):
+    writer = PcapWriter('captures/handshake.pcap', append=True)
+    for _, packet in ap.eapol_messages.items():
+        writer.write(packet)
+    writer.write(ap.beacon)
+
+
 def handle_packet(pkt):
     # Handle beacon frames
     if pkt.haslayer(Dot11Beacon) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 8:
         handle_beacon(pkt)
 
-        # Handle EAPOL frame (handshake)
+    # Handle EAPOL frame (handshake)
     elif pkt.haslayer(EAPOL):
-        print(pkt.summary())
         process_eapol(pkt)
 
     # Handle probe requests
@@ -129,12 +136,13 @@ def handle_packet(pkt):
 
 
 def process_eapol(pkt):
+    msg_type = pkt[EAPOL_KEY].guess_key_number()
     if pkt[Dot11].addr1 in bssid_map:
-        bssid_map[pkt[Dot11].addr1].eapol_messages[pkt[EAPOL].type] = pkt
+        bssid_map[pkt[Dot11].addr1].eapol_messages[msg_type] = pkt
     elif pkt[Dot11].addr2 in bssid_map:
-        bssid_map[pkt[Dot11].addr2].eapol_messages[pkt[EAPOL].type] = pkt
+        bssid_map[pkt[Dot11].addr2].eapol_messages[msg_type] = pkt
     elif pkt[Dot11].addr3 in bssid_map:
-        bssid_map[pkt[Dot11].addr3].eapol_messages[pkt[EAPOL].type] = pkt
+        bssid_map[pkt[Dot11].addr3].eapol_messages[msg_type] = pkt
 
 
 def process_client_data_frame(src, dest):
@@ -182,7 +190,7 @@ sniff_thread = create_sniff_thread()
 sniff_thread.start()
 
 print('Starting GUI thread')
-gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, deauth_thread, INTERFACE_NAME, stop_sniffing, create_sniff_thread, stop_changing_channel, stop_deauthing,))
+gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, deauth_thread, INTERFACE_NAME, stop_sniffing, create_sniff_thread, stop_changing_channel, stop_deauthing, save_capture,))
 gui_thread.start()
 
 print('Starting channel switching thread')
