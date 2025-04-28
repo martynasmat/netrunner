@@ -1,10 +1,7 @@
 import threading
 import gui
-from time import localtime, strftime
 
-from scapy.utils import *
-
-from network_scanner import NetworkScanner
+from network_scanner import *
 
 # TODO:
 # Support other types of frames to identify clients
@@ -32,26 +29,16 @@ CHANNEL_TABLE = {
     2484: 14,
 }
 
-
-def save_capture(ap):
-    """Save captured EAPOL messages and beacon frames to a .pcap file"""
-
-    writer = PcapWriter(f"captures/{ap.ssid}-{strftime("%Y-%m-%d-%H:%M", localtime())}.pcap", append=True)
-    for _, packet in ap.eapol_messages.items():
-        writer.write(packet)
-    writer.write(ap.beacon)
-
-
 scanner = NetworkScanner(INTERFACE_NAME, CHANNEL_TABLE, START_CHANNEL)
 
-print('Starting GUI thread')
-gui_thread = threading.Thread(target=gui.start_gui, args=(scanner, save_capture,))
+# GUI
+gui_thread = threading.Thread(target=gui.start_gui, args=(scanner,))
 gui_thread.start()
 
-print('Starting sniffing thread')
+# Sniffing
 sniff_thread = threading.Thread(target=scanner.start_sniffing)
 sniff_thread.start()
 
-print('Starting channel switching thread')
+# Change channels
 chan_thread = threading.Thread(target=scanner.start_channel_hopping)
 chan_thread.start()

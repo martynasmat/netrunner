@@ -4,8 +4,9 @@ from scapy.layers.dot11 import *
 
 import threading
 
-from access_point import AccessPoint
+from access_point import *
 from change_channel import *
+from capture_manager import *
 
 class NetworkScanner():
     
@@ -15,6 +16,7 @@ class NetworkScanner():
         self.start_channel = start_channel
         self.access_points = []
         self.selected_ap = None
+        self.capture_manager = CaptureManager('captures/')
 
         # Access point MAC addresses
         self.ap_bssids = set()
@@ -36,6 +38,10 @@ class NetworkScanner():
         self.deauth_packet_count = 0
         self.max_packets = 0
         
+    def stop_all(self):
+        self.stop_sniff.set()
+        self.stop_changing_channel.set()
+        self.stop_deauth.set()
 
     def handle_packet(self, pkt):
         """Handle different types of 802.11 frames"""
@@ -151,6 +157,7 @@ class NetworkScanner():
         change_channel(self.start_channel, self.interface_name, self.stop_changing_channel)
 
     def select_ap(self, ap):
+        self.capture_manager.ap = ap
         self.selected_ap = ap
 
     def lock_chnl(self):

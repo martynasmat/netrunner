@@ -4,7 +4,7 @@ import threading
 from change_channel import *
 
 
-def start_gui(scanner, save_capture):
+def start_gui(scanner):
 
     def draw_menu(stdscr):
         curses.curs_set(0)
@@ -39,6 +39,7 @@ def start_gui(scanner, save_capture):
             # Handle user input
             key = stdscr.getch()
             if key == ord('q'):
+                scanner.stop_all()
                 loop = False
 
             elif key == ord('\n'):
@@ -77,6 +78,7 @@ def start_gui(scanner, save_capture):
         loop = True
         stdscr.timeout(500)
         period = 0
+        stdscr.clear()
 
         deauth_thread = threading.Thread(target=scanner.deauth)
         deauth_thread.start()
@@ -90,9 +92,13 @@ def start_gui(scanner, save_capture):
             stdscr.addstr(5, 0, f"Please wait for deauthentication to finish")
             key = stdscr.getch()
             if key == ord('q'):
+                scanner.stop_all()
                 loop = False
             
-            handshake_menu(stdscr)
+            if scanner.deauth_packet_count >= scanner.max_packets:
+                loop = False
+                handshake_menu(stdscr)
+
             period += 1
             stdscr.clear()
             stdscr.refresh()
@@ -112,24 +118,44 @@ def start_gui(scanner, save_capture):
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
             stdscr.addstr(2, 0, "Press 'q' to exit")
             stdscr.addstr(3, 0, f"Press Enter to save captured packets")
-            stdscr.addstr(4, 0, f"{scanner.selected_ap.ssid} ({scanner.selected_ap.bssid}) EAPOL messages captured:")
+            stdscr.addstr(4, 0, f"Press 'p' to retry deauthentication")
+            stdscr.addstr(5, 0, f"{scanner.selected_ap.ssid} ({scanner.selected_ap.bssid}) EAPOL messages captured:")
             i = 0
             for key, pkt in scanner.selected_ap.eapol_messages.items():
                 if pkt:
                     i += 1
-                    stdscr.addstr(i + 5, 0, f"Message type: {key}")
+                    stdscr.addstr(i + 6, 0, f"Message type: {key}")
 
             key = stdscr.getch()
             if key == ord('q'):
+                scanner.stop_all()
                 loop = False
             elif key == ord('\n'):
-                save_capture(scanner.selected_ap)
+                scanner.stop_sniff.set()
+                filename = scanner.capture_manager.save_capture()
+                saved_menu(stdscr, filename)
+                loop = False
             elif key == ord('p'):
                 scanner.stop_sniff.set()
+                loop = False
                 deauth_menu(stdscr)
 
             stdscr.clear()
             stdscr.refresh()
+
+    def saved_menu(stdscr, filename):
+            loop = True
+            stdscr.clear()
+            stdscr.timeout(500)
+            stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
+            stdscr.addstr(2, 0, f"File succesfully saved - {filename}")
+            stdscr.addstr(4, 0, "Press any key to exit")
+
+            while loop:
+                key = stdscr.getch()
+                if key != -1:
+                    scanner.stop_all()
+                    loop = False
 
 
     curses.wrapper(draw_menu)
