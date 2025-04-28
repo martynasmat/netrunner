@@ -1,8 +1,9 @@
 import curses
 from change_channel import *
+import threading
 
 
-def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create_sniff_thread, stop_changing_channel, stop_deauthing_event, save_capture):
+def start_gui(scanner, save_capture):
 
     def draw_menu(stdscr):
         curses.curs_set(0)
@@ -21,7 +22,7 @@ def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create
             stdscr.addstr(1, 0, "Press 'q' to exit")
         
             # Refresh AP list
-            ap_list[:] = update_callback()  # Call the scanner function
+            ap_list[:] = scanner.access_points
 
             # Display APs
             for idx, ap in enumerate(ap_list, start=3):
@@ -40,8 +41,8 @@ def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create
                 loop = False
 
             elif key == ord('\n'):
-                stop_sniffing.set()
-                stop_changing_channel.set()
+                scanner.stop_sniff.set()
+                scanner.stop_changing_channel.set()
                 stdscr.nodelay(0)  # Turn blocking input back on for user input
                 stdscr.timeout(-1)
 
@@ -53,7 +54,7 @@ def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create
                     choice = stdscr.getstr().decode().strip()
                     index = int(choice) - 1
                     if 0 <= index < len(ap_list):
-                        selected_ap = ap_list[index]
+                        scanner.select_ap(ap_list[index])
                     else:
                         footer = "Invalid selection."
                 except Exception:
@@ -65,53 +66,56 @@ def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create
                 stdscr.timeout(100)
                 stdscr.clear()
                 loop = False
+                deauth_menu(stdscr)
+
 
             stdscr.refresh()
         
-        deauth_menu(stdscr, selected_ap)
 
-    def deauth_menu(stdscr, selected):
+    def deauth_menu(stdscr):
         loop = True
         stdscr.timeout(500)
         period = 0
 
-        thread = deauth_callback(selected, stop_deauthing_event)
-        thread.start()
+        deauth_thread = threading.Thread(target=scanner.deauth)
+        deauth_thread.start()
 
         while loop:
             period = period % 4
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
             stdscr.addstr(1, 0, "Press 'q' to exit")
-            stdscr.addstr(3, 0, f"Deauthing {selected.ssid} ({selected.bssid}){period * '.'}")
+            stdscr.addstr(3, 0, f"Deauthing {scanner.selected_ap.ssid} ({scanner.selected_ap.bssid}){period * '.'}")
             stdscr.addstr(4, 0, f"Press Enter to stop deauthing and listen for handshakes")
 
             key = stdscr.getch()
             if key == ord('q'):
                 loop = False
             elif key == ord('\n'):
-                stop_deauthing_event.set()
-                handshake_menu(stdscr, selected)
+                scanner.stop_deauth.set()
+                handshake_menu(stdscr)
 
             period += 1
             stdscr.erase()
             stdscr.refresh()
 
-    def handshake_menu(stdscr, ap):
+    def handshake_menu(stdscr):
         loop = True
         stdscr.clear()
         stdscr.timeout(500)
-        lock_channel(ap.channel, interface)
-        stop_sniffing.clear()
-        thread = create_sniff_thread()
-        thread.start()
+        scanner.lock_chnl()
+        scanner.stop_sniff.clear()
+
+        # Start sniffing again, filter EAP packets
+        sniff_thread = threading.Thread(target=scanner.start_sniffing, args=('ether proto 0x888e',))
+        sniff_thread.start()
 
         while loop:
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
             stdscr.addstr(2, 0, "Press 'q' to exit")
             stdscr.addstr(3, 0, f"Press Enter to save captured packets")
-            stdscr.addstr(4, 0, f"{ap.ssid} ({ap.bssid}) EAPOL messages captured:")
+            stdscr.addstr(4, 0, f"{scanner.selected_ap.ssid} ({scanner.selected_ap.bssid}) EAPOL messages captured:")
             i = 0
-            for key, pkt in ap.eapol_messages.items():
+            for key, pkt in scanner.selected_ap.eapol_messages.items():
                 if pkt:
                     i += 1
                     stdscr.addstr(i + 5, 0, f"Message type: {key}")
@@ -120,7 +124,7 @@ def start_gui(update_callback, deauth_callback, interface, stop_sniffing, create
             if key == ord('q'):
                 loop = False
             elif key == ord('\n'):
-                save_capture(ap)
+                save_capture(scanner.selected_ap)
 
             stdscr.clear()
             stdscr.refresh()
