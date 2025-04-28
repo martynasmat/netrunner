@@ -1,5 +1,6 @@
 import threading
 import gui
+from time import localtime, strftime
 
 from scapy.utils import *
 
@@ -35,7 +36,7 @@ CHANNEL_TABLE = {
 def save_capture(ap):
     """Save captured EAPOL messages and beacon frames to a .pcap file"""
 
-    writer = PcapWriter('captures/handshake.pcap', append=True)
+    writer = PcapWriter(f"captures/{ap.ssid}-{strftime("%Y-%m-%d-%H:%M", localtime())}.pcap", append=True)
     for _, packet in ap.eapol_messages.items():
         writer.write(packet)
     writer.write(ap.beacon)

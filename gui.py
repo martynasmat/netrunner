@@ -124,6 +124,9 @@ def start_gui(scanner, save_capture):
                 loop = False
             elif key == ord('\n'):
                 save_capture(scanner.selected_ap)
+            elif key == ord('p'):
+                scanner.stop_sniff.set()
+                deauth_menu(stdscr)
 
             stdscr.clear()
             stdscr.refresh()
