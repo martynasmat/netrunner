@@ -85,17 +85,15 @@ def start_gui(scanner, save_capture):
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
             stdscr.addstr(1, 0, "Press 'q' to exit")
             stdscr.addstr(3, 0, f"Deauthing {scanner.selected_ap.ssid} ({scanner.selected_ap.bssid}){period * '.'}")
-            stdscr.addstr(4, 0, f"Press Enter to stop deauthing and listen for handshakes")
-
+            stdscr.addstr(4, 0, f"Packet sent [{scanner.deauth_packet_count}/{scanner.max_packets}]")
+            stdscr.addstr(5, 0, f"Please wait for deauthentication to finish")
             key = stdscr.getch()
             if key == ord('q'):
                 loop = False
-            elif key == ord('\n'):
-                scanner.stop_deauth.set()
-                handshake_menu(stdscr)
-
+            
+            handshake_menu(stdscr)
             period += 1
-            stdscr.erase()
+            stdscr.clear()
             stdscr.refresh()
 
     def handshake_menu(stdscr):

