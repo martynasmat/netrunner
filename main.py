@@ -1,7 +1,9 @@
 import threading
 import gui
-from network_scanner import NetworkScanner
+
 from scapy.utils import *
+
+from network_scanner import NetworkScanner
 
 # TODO:
 # Support other types of frames to identify clients

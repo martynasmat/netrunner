@@ -1,6 +1,7 @@
 import curses
-from change_channel import *
 import threading
+
+from change_channel import *
 
 
 def start_gui(scanner, save_capture):

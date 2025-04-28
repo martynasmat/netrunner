@@ -1,4 +1,5 @@
 class AccessPoint():
+    """Represents an access point, stores relevant information for deauthentication and packet capture"""
     
     def __init__(self, ssid, bssid, signal_strength=0, channel=1, beacon=None):
         self.ssid = ssid
