@@ -19,6 +19,10 @@ class AccessPoint():
         """Update signal strength value"""
         self.signal_strength = dbm
 
+    def update_channel(self, chan):
+        """Update channel value"""
+        self.channel = chan
+
     def add_client(self, client):
         """Append new client"""
         self.clients.append(client)

@@ -105,6 +105,7 @@ class NetworkScanner():
             self.ssid_map[ssid] = ap
         else:
             self.bssid_map[bssid].update_signal_strength(signal_strength)
+            self.bssid_map[bssid].update_channel(channel)
 
 
     def handle_eapol(self, pkt):
