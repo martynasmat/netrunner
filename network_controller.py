@@ -9,7 +9,7 @@ from change_channel import *
 from capture_manager import *
 
 
-class NetworkScanner():
+class NetworkController():
 
     def __init__(
             self,

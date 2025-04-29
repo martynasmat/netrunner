@@ -1,27 +1,73 @@
-**Netrunner (WIP)**
+# Netrunner (WIP)
 
-**DISCLAIMER**
+## DISCLAIMER
 
 🚨 This tool is for educational purposes only and must NOT be used on networks without permission. Use only on networks you own or have explicit authorization to test. Unauthorized use is ILLEGAL.
 
-**About**
+## About
 
-This is a work-in-progress tool I created to learn more about wireless networks and WiFi security. More features coming soon (hopefully).
+Netrunner is a Python-based tool for Wi-Fi reconnaissance and WPA/WPA2 handshake capture. It provides a simple terminal interface to scan for nearby access points, deauthenticate connected clients, and save their EAPOL handshakes for offline analysis.
 
-**Current Features:**
+## Overview
 
-- Scan for nearby access points
-- Identify clients connected to APs
-- Select an AP
-- Send deauthentication frames to selected AP and its' clients
-- Capture EAPOL frames associated with selected AP
+Netrunner automates three main steps:
 
-**Short Demonstration**
+1. Scanning: Hops across 2.4 GHz channels to discover available access points (APs).
 
-![](demo/netrunner demo - Copy - Copy.mp4)
-=======
-**Short Demonstration**
+2. Deauthentication: Sends IEEE 802.11 deauthentication frames to connected clients, forcing them to reconnect.
 
-https://github.com/user-attachments/assets/1a6a720b-19fc-4895-8c14-00902ec2377b
+3. Handshake Capture: Listens for the four-message EAPOL handshake and writes it, along with the beacon frame, to a timestamped PCAP file.
 
->>>>>>> 49e21f4c432920c4fa9a0c80f50557e7566ccf49
+All actions run in parallel threads, and you control them through a curses-based UI.
+
+## Features:
+
+- **Channel Hopping:** Automatically cycles through channels to find APs.  
+- **Client Detection:** Tracks clients using beacon, probe, association, and data frames.  
+- **Deauth Attack:** Crafts and sends deauthentication frames to each client.  
+- **Handshake Logging:** Waits for all four EAPOL messages before saving.  
+- **Terminal UI:** Select targets, monitor progress, and save captures without leaving the terminal.
+
+## Requirements
+
+- **OS:** Linux with `iwconfig` (e.g., Ubuntu, Debian, Kali).  
+- **Python:** 3.7 or later.  
+- **Dependencies:** Specified in `requirements.txt`, including:
+  - Scapy  
+  - curses, threading, subprocess, pathlib, time (standard library)
+
+## Usage
+
+Before running, enable monitor mode on your network interface with
+
+```sudo airmon-ng start [INTERFACE NAME]```
+
+Run:
+
+```sudo python main.py```
+
+1. The UI will list detected APs with SSID, BSSID, signal strength, client count, and channel.
+
+2. Press Enter to stop scanning and pick an AP by number.
+
+3. The tool will start sending deauth frames and show packet count.
+
+4. After deauthentication, it will lock to the AP’s channel and capture EAPOL handshakes.
+
+5. Once all four messages are received, press Enter to save the handshake.
+
+- Press q at any time to exit.
+
+- Captured files are saved in the captures/ directory by default.
+
+## Project Structure
+
+```
+netrunner/
+├── access_point.py       # Stores AP info and EAPOL packet slots
+├── capture_manager.py    # Saves packets and beacons to PCAP
+├── change_channel.py     # Handles channel hopping and locking
+├── gui.py                # Curses-based user interface
+├── main.py               # Entry point and thread setup
+└── network_scanner.py    # Orchestrates sniffing, deauth, and capture
+```
