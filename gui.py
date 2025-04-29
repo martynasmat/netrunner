@@ -61,21 +61,23 @@ def start_gui(scanner):
                 scanner.stop_changing_channel.set()
                 stdscr.nodelay(0)  # Turn blocking input back on for user input
                 stdscr.timeout(-1)
+                input_loop = True
 
                 # Show cursor to input number
                 curses.curs_set(1)
                 curses.echo()
-                stdscr.addstr(
-                    min(stdscr.getmaxyx()[0] - 1, len(ap_list) + 5), 0, "AP to deauth: ")
-                try:
-                    choice = stdscr.getstr().decode().strip()
-                    index = int(choice) - 1
-                    if 0 <= index < len(ap_list):
-                        scanner.select_ap(ap_list[index])
-                    else:
-                        footer = "Invalid selection."
-                except Exception:
-                    footer = "Error reading input."
+                while input_loop:
+                    stdscr.addstr(min(stdscr.getmaxyx()[0] - 1, len(ap_list) + 5), 0, "AP to deauth: ")
+                    choice = str(stdscr.getstr().decode().strip())
+
+                    if choice.isnumeric():
+                        index = int(choice) - 1
+                        if 0 <= index < len(ap_list):
+                            scanner.select_ap(ap_list[index])
+                            input_loop = False
+                    y = stdscr.getyx()[0]
+                    stdscr.move(y-1, 0)
+                    stdscr.clrtoeol()
 
                 curses.noecho()
                 curses.curs_set(0)
@@ -101,10 +103,10 @@ def start_gui(scanner):
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
             stdscr.addstr(1, 0, "Press 'q' to exit")
             stdscr.addstr(
-                3, 0, f"Deauthing {
-                    scanner.selected_ap.ssid} ({
-                    scanner.selected_ap.bssid}){
-                    period * '.'}")
+                3, 0, f"""Deauthing 
+                {scanner.selected_ap.ssid}
+                ({scanner.selected_ap.bssid})
+                {period * '.'}""")
             stdscr.addstr(
                 4, 0, f"Packet sent [{scanner.deauth_packet_count}/{scanner.max_packets}]")
             stdscr.addstr(5, 0, f"Please wait for deauthentication to finish")
