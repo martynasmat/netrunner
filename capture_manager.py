@@ -4,11 +4,11 @@ from time import localtime, strftime
 class CaptureManager():
     """Capture file management"""
 
-    def __init__(self, save_dir):
+    def __init__(self, save_dir: str):
         self.save_dir = save_dir
         self.ap = None
 
-    def save_capture(self):
+    def save_capture(self) -> str:
         """Save captured EAPOL messages and beacon frames to a .pcap file"""
         filename = f"{self.save_dir}{self.ap.ssid}-{strftime("%Y-%m-%d-%H:%M", localtime())}.pcap"
 

@@ -10,7 +10,7 @@ from capture_manager import *
 
 class NetworkScanner():
     
-    def __init__(self, interface_name, channel_table, start_channel):
+    def __init__(self, interface_name: str, channel_table: dict, start_channel: int):
         self.interface_name = interface_name
         self.channel_table = channel_table
         self.start_channel = start_channel
@@ -43,7 +43,7 @@ class NetworkScanner():
         self.stop_changing_channel.set()
         self.stop_deauth.set()
 
-    def handle_packet(self, pkt):
+    def handle_packet(self, pkt: Packet):
         """Handle different types of 802.11 frames"""
 
         # Handle beacon frames
@@ -91,7 +91,7 @@ class NetworkScanner():
                     self.process_client_data_frame(source, destination)
 
 
-    def handle_beacon(self, pkt):
+    def handle_beacon(self, pkt: Packet):
         """Handle beacon frames"""
 
         bssid = pkt[Dot11].addr3
@@ -114,7 +114,7 @@ class NetworkScanner():
             self.bssid_map[bssid].update_channel(channel)
 
 
-    def handle_eapol(self, pkt):
+    def handle_eapol(self, pkt: Packet):
         """Process EAPOL packet, save key message type"""
 
         msg_type = pkt[EAPOL_KEY].guess_key_number()
@@ -126,7 +126,7 @@ class NetworkScanner():
             self.bssid_map[pkt[Dot11].addr3].eapol_messages[msg_type] = pkt
 
 
-    def process_client_data_frame(self, src, dest):
+    def process_client_data_frame(self, src: str, dest: str):
         if dest in self.bssid_map.keys() and dest != 'ff:ff:ff:ff:ff:ff':
                 if src not in self.bssid_map[dest].clients:
                     self.bssid_map[dest].add_client(src)
@@ -144,7 +144,7 @@ class NetworkScanner():
                 sendp(client_to_ap, iface=self.interface_name, verbose=False)
                 self.deauth_packet_count += 1
 
-    def start_sniffing(self, filter=''):
+    def start_sniffing(self, filter: str=''):
         sniff(
             iface=self.interface_name,
             prn=self.handle_packet,
@@ -156,7 +156,7 @@ class NetworkScanner():
     def start_channel_hopping(self):
         change_channel(self.start_channel, self.interface_name, self.stop_changing_channel)
 
-    def select_ap(self, ap):
+    def select_ap(self, ap: AccessPoint):
         self.capture_manager.ap = ap
         self.selected_ap = ap
 

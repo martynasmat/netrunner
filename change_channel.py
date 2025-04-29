@@ -1,9 +1,10 @@
 import os
 import time
+import threading
 
 SWITCH_TIME = 0.25
 
-def change_channel(channel_arg, interface, stop_event):
+def change_channel(channel_arg: int, interface: str, stop_event: threading.Event):
     # Periodically change channels to discover all available networks
     channel = channel_arg
 
@@ -14,6 +15,6 @@ def change_channel(channel_arg, interface, stop_event):
         time.sleep(SWITCH_TIME)
 
 
-def lock_channel(channel, interface):
+def lock_channel(channel: int, interface: str):
     # Locks to one channel
     os.system(f'sudo iwconfig {interface} channel {channel}')
