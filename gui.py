@@ -31,15 +31,10 @@ def start_gui(scanner):
 
             # Display APs
             for idx, ap in enumerate(ap_list, start=3):
-                line = f"{
-                    idx -
-                    2:3}. {
-                    ap.ssid:25} | MAC: ({
-                    ap.bssid}) | {
+                line = f"{idx-2:3}. {ap.ssid:25
+                    } | MAC: ({ap.bssid}) | {
                     ap.signal_strength} dBm | Clients: {
-                    len(
-                        ap.clients)} | Channel: {
-                            ap.channel}"
+                    len(ap.clients)} | Channel: {ap.channel}"
                 stdscr.addstr(idx, 0, line)  # truncate if needed
                 last_row = idx
                 if idx >= stdscr.getmaxyx()[0]:
@@ -70,11 +65,14 @@ def start_gui(scanner):
                     stdscr.addstr(min(stdscr.getmaxyx()[0] - 1, len(ap_list) + 5), 0, "AP to deauth: ")
                     choice = str(stdscr.getstr().decode().strip())
 
+                    # Input validation
                     if choice.isnumeric():
                         index = int(choice) - 1
                         if 0 <= index < len(ap_list):
                             scanner.select_ap(ap_list[index])
                             input_loop = False
+
+                    # Clear last line
                     y = stdscr.getyx()[0]
                     stdscr.move(y-1, 0)
                     stdscr.clrtoeol()
