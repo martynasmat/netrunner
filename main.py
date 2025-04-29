@@ -8,7 +8,7 @@ from network_scanner import *
 # Show number of packets sent
 # Show security standard
 
-# Interface has to be in monitor mode
+# Interface has to be in monitor modeauto
 INTERFACE_NAME = 'wlan0mon'
 START_CHANNEL = 1
 

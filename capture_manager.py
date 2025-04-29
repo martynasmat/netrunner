@@ -1,6 +1,7 @@
 from scapy.utils import *
 from time import localtime, strftime
 
+
 class CaptureManager():
     """Capture file management"""
 
@@ -10,7 +11,12 @@ class CaptureManager():
 
     def save_capture(self) -> str:
         """Save captured EAPOL messages and beacon frames to a .pcap file"""
-        filename = f"{self.save_dir}{self.ap.ssid}-{strftime("%Y-%m-%d-%H:%M", localtime())}.pcap"
+        filename = f"{
+            self.save_dir}{
+            self.ap.ssid}-{
+            strftime(
+                "%Y-%m-%d-%H:%M",
+                localtime())}.pcap"
         writer = PcapWriter(filename, append=True)
 
         # Write all packets to file

