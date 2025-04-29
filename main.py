@@ -1,7 +1,7 @@
 import threading
 import gui
 
-from network_scanner import *
+from network_controller import *
 
 # TODO:
 # Support other types of frames to identify clients
@@ -30,7 +30,7 @@ CHANNEL_TABLE = {
     2484: 14,
 }
 
-scanner = NetworkScanner(INTERFACE_NAME, CHANNEL_TABLE, START_CHANNEL)
+scanner = NetworkController(INTERFACE_NAME, CHANNEL_TABLE, START_CHANNEL)
 
 # GUI
 gui_thread = threading.Thread(target=gui.start_gui, args=(scanner,))
