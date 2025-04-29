@@ -3,6 +3,7 @@ class AccessPoint():
     
     def __init__(self, ssid: str, bssid: str, signal_strength: int=0, channel: int=1, beacon=None):
         self.ssid = ssid
+        # MAC address
         self.bssid = bssid
         # List of clients (possibly) connected to the AP
         self.clients = []

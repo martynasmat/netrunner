@@ -11,8 +11,9 @@ class CaptureManager():
     def save_capture(self) -> str:
         """Save captured EAPOL messages and beacon frames to a .pcap file"""
         filename = f"{self.save_dir}{self.ap.ssid}-{strftime("%Y-%m-%d-%H:%M", localtime())}.pcap"
-
         writer = PcapWriter(filename, append=True)
+
+        # Write all packets to file
         for _, packet in self.ap.eapol_messages.items():
             writer.write(packet)
         writer.write(self.ap.beacon)
