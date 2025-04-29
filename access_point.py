@@ -23,14 +23,14 @@ class AccessPoint():
         }
         self.beacon = beacon
 
-    def update_signal_strength(self, dbm: int):
+    def update_signal_strength(self, dbm: int) -> None:
         """Update signal strength value"""
         self.signal_strength = dbm
 
-    def update_channel(self, chan: int):
+    def update_channel(self, chan: int) -> None:
         """Update channel value"""
         self.channel = chan
 
-    def add_client(self, client: str):
+    def add_client(self, client: str) -> None:
         """Append new client"""
         self.clients.append(client)

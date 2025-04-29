@@ -5,7 +5,7 @@ from time import localtime, strftime
 class CaptureManager():
     """Capture file management"""
 
-    def __init__(self, save_dir: str):
+    def __init__(self, save_dir: str) -> None:
         self.save_dir = save_dir
         self.ap = None
 

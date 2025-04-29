@@ -2,17 +2,18 @@ import curses
 import threading
 
 from change_channel import *
+from network_controller import *
 
 
-def start_gui(scanner):
+def start_gui(scanner: NetworkController) -> None:
 
-    def draw_menu(stdscr):
+    def draw_menu(stdscr) -> None:
         curses.curs_set(0)
         stdscr.nodelay(1)
         stdscr.timeout(100)  # Refresh rate (milliseconds)
         scanning_menu(stdscr)
 
-    def scanning_menu(stdscr):
+    def scanning_menu(stdscr) -> None:
         last_row = 2
         ap_list = []
         loop = True
@@ -87,7 +88,7 @@ def start_gui(scanner):
 
             stdscr.refresh()
 
-    def deauth_menu(stdscr):
+    def deauth_menu(stdscr) -> None:
         loop = True
         stdscr.timeout(500)
         period = 0
@@ -121,7 +122,7 @@ def start_gui(scanner):
             stdscr.clear()
             stdscr.refresh()
 
-    def handshake_menu(stdscr):
+    def handshake_menu(stdscr) -> None:
         loop = True
         stdscr.clear()
         stdscr.timeout(500)
@@ -166,7 +167,7 @@ def start_gui(scanner):
             stdscr.clear()
             stdscr.refresh()
 
-    def saved_menu(stdscr, filename):
+    def saved_menu(stdscr, filename: str) -> None:
         loop = True
         stdscr.clear()
         stdscr.timeout(500)
