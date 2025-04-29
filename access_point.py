@@ -7,7 +7,7 @@ class AccessPoint():
             bssid: str,
             signal_strength: int = 0,
             channel: int = 1,
-            beacon=None):
+            beacon=None) -> None:
         self.ssid = ssid
         # MAC address
         self.bssid = bssid
