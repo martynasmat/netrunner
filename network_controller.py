@@ -10,7 +10,7 @@ from capture_manager import *
 
 
 class Deauther():
-
+    """Responsible for deauthentication"""
     def __init__(self, ap: AccessPoint, interface_name: str) -> None:
         self.ap = ap
         self.interface_name = interface_name
@@ -39,7 +39,7 @@ class Deauther():
 
 
 class NetworkController():
-
+    """Responsible for packet sniffing and handling"""
     def __init__(
             self,
             interface_name: str,
