@@ -1,8 +1,8 @@
 # Netrunner (WIP)
 
-## DISCLAIMER
+## 🚨 DISCLAIMER
 
-🚨 This tool is for educational purposes only and must NOT be used on networks without permission. Use only on networks you own or have explicit authorization to test. Unauthorized use is ILLEGAL.
+This tool is for educational purposes only and must NOT be used on networks without permission. Use only on networks you own or have explicit authorization to test.
 
 ## About
 
@@ -63,11 +63,11 @@ https://github.com/user-attachments/assets/fc34e4c6-e775-4287-af90-5c741b6c86f6
 
 ```
 netrunner/
-├── access_point.py       # Stores AP info and EAPOL packet slots
-├── capture_manager.py    # Saves packets and beacons to PCAP
-├── change_channel.py     # Handles channel hopping and locking
-├── gui.py                # Curses-based user interface
-├── main.py               # Entry point and thread setup
-└── network_scanner.py    # Orchestrates sniffing, deauth, and capture
+├── access_point.py         # Stores AP info and EAPOL messages
+├── capture_manager.py      # Saves packets and beacons to PCAP
+├── change_channel.py       # Handles channel hopping and locking
+├── gui.py                  # Curses-based user interface
+├── main.py                 # Entry point and thread setup
+└── network_utilities.py    # Responsible for sniffing, deauthentication, and capture
 ```
 
