@@ -56,9 +56,8 @@ Run:
 
 5. Once all four messages are received, press Enter to save the handshake.
 
-- Press q at any time to exit.
-
-- Captured files are saved in the captures/ directory by default.
+### Demonstration
+https://github.com/user-attachments/assets/fc34e4c6-e775-4287-af90-5c741b6c86f6
 
 ## Project Structure
 
@@ -71,3 +70,4 @@ netrunner/
 ├── main.py               # Entry point and thread setup
 └── network_scanner.py    # Orchestrates sniffing, deauth, and capture
 ```
+
