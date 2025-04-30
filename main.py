@@ -43,3 +43,7 @@ sniff_thread.start()
 # Change channels
 chan_thread = threading.Thread(target=scanner.start_channel_hopping)
 chan_thread.start()
+
+gui_thread.join()
+sniff_thread.join()
+chan_thread.join()

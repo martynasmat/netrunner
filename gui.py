@@ -101,7 +101,7 @@ def start_gui(scanner: NetworkScanner) -> None:
         while loop:
             period = period % 4
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
-            stdscr.addstr(1, 0, "Press 'q' to exit")
+            stdscr.addstr(2, 0, "Press 'q' to exit")
             stdscr.addstr(
                 3, 0, f"""Deauthing 
                 {scanner.selected_ap.ssid}
@@ -112,6 +112,7 @@ def start_gui(scanner: NetworkScanner) -> None:
             stdscr.addstr(5, 0, f"Please wait for deauthentication to finish")
             key = stdscr.getch()
             if key == ord('q'):
+                deauth_thread.join()
                 scanner.stop_all()
                 loop = False
 
@@ -146,22 +147,28 @@ def start_gui(scanner: NetworkScanner) -> None:
                     scanner.selected_ap.ssid} ({
                     scanner.selected_ap.bssid}) EAPOL messages captured:""")
             i = 0
-            for key, pkt in scanner.selected_ap.eapol_messages.items():
-                if pkt:
-                    i += 1
-                    stdscr.addstr(i + 6, 0, f"Message type: {key}")
+            if scanner.selected_ap.eapol_messages.values():
+                for key, pkt in scanner.selected_ap.eapol_messages.items():
+                    if pkt:
+                        i += 1
+                        stdscr.addstr(i + 6, 0, f"Message type: {key}")
+            else:
+                stdscr.addstr(7, 0, "No EAPOL packets captured yet.")
 
             key = stdscr.getch()
             if key == ord('q'):
+                sniff_thread.join()
                 scanner.stop_all()
                 loop = False
             elif key == ord('\n'):
                 scanner.stop_sniff.set()
+                sniff_thread.join()
                 filename = scanner.capture_manager.save_capture()
                 saved_menu(stdscr, filename)
                 loop = False
             elif key == ord('p'):
                 scanner.stop_sniff.set()
+                sniff_thread.join()
                 loop = False
                 deauth_menu(stdscr)
 
