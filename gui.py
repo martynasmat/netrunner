@@ -90,7 +90,7 @@ def start_gui(scanner: NetworkScanner) -> None:
 
     def deauth_menu(stdscr) -> None:
         loop = True
-        stdscr.timeout(500)
+        stdscr.timeout(50)
         period = 0
         stdscr.clear()
 
@@ -102,14 +102,26 @@ def start_gui(scanner: NetworkScanner) -> None:
             period = period % 4
             stdscr.addstr(0, 0, "Netrunner - WiFi Tool (WIP)", curses.A_BOLD)
             stdscr.addstr(2, 0, "Press 'q' to exit")
-            stdscr.addstr(
-                3, 0, f"""Deauthing 
-                {scanner.selected_ap.ssid}
-                ({scanner.selected_ap.bssid})
-                {period * '.'}""")
-            stdscr.addstr(
-                4, 0, f"Packet sent [{scanner.deauther.packets_sent}/{scanner.deauther.packet_count}]")
-            stdscr.addstr(5, 0, f"Please wait for deauthentication to finish")
+            stdscr.addstr(3, 0, f"Deauthing {scanner.selected_ap.ssid}({scanner.selected_ap.bssid}){period * '.'}")
+            stdscr.addstr(4, 0, f"Packet sent [{scanner.deauther.packets_sent}/{scanner.deauther.packet_count}]")
+            stdscr.addstr(6, 0, f"Please wait for deauthentication to finish")
+
+            BAR_WIDTH = 40  # adjust to taste
+
+            # Packet count
+            sent = scanner.deauther.packets_sent
+            total = scanner.deauther.packet_count
+            stdscr.addstr(4, 0, f"Packets sent: {sent}/{total}")
+
+            # Progress bar
+            if total > 0:
+                frac = sent / total
+                filled = int(frac * BAR_WIDTH)
+                bar = "#" * filled + "-" * (BAR_WIDTH - filled)
+                stdscr.addstr(5, 0, f"[{bar}] {int(frac * 100):3d}%")
+            else:
+                stdscr.addstr(5, 0, "[No clients to deauth]")
+
             key = stdscr.getch()
             if key == ord('q'):
                 deauth_thread.join()
@@ -147,13 +159,10 @@ def start_gui(scanner: NetworkScanner) -> None:
                     scanner.selected_ap.ssid} ({
                     scanner.selected_ap.bssid}) EAPOL messages captured:""")
             i = 0
-            if scanner.selected_ap.eapol_messages.values():
-                for key, pkt in scanner.selected_ap.eapol_messages.items():
-                    if pkt:
-                        i += 1
-                        stdscr.addstr(i + 6, 0, f"Message type: {key}")
-            else:
-                stdscr.addstr(7, 0, "No EAPOL packets captured yet.")
+            for key, pkt in scanner.selected_ap.eapol_messages.items():
+                if pkt:
+                    i += 1
+                    stdscr.addstr(i + 6, 0, f"Message type: {key}")
 
             key = stdscr.getch()
             if key == ord('q'):
