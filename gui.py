@@ -70,8 +70,9 @@ def start_gui(scanner: NetworkScanner) -> None:
                     if choice.isnumeric():
                         index = int(choice) - 1
                         if 0 <= index < len(ap_list):
-                            scanner.select_ap(ap_list[index])
-                            input_loop = False
+                            if len(ap_list[index].clients):
+                                scanner.select_ap(ap_list[index])
+                                input_loop = False
 
                     # Clear last line
                     y = stdscr.getyx()[0]
@@ -104,23 +105,20 @@ def start_gui(scanner: NetworkScanner) -> None:
             stdscr.addstr(2, 0, "Press 'q' to exit")
             stdscr.addstr(3, 0, f"Deauthing {scanner.selected_ap.ssid}({scanner.selected_ap.bssid}){period * '.'}")
             stdscr.addstr(4, 0, f"Packet sent [{scanner.deauther.packets_sent}/{scanner.deauther.packet_count}]")
-            stdscr.addstr(6, 0, f"Please wait for deauthentication to finish")
+            stdscr.addstr(7, 0, f"Please wait for deauthentication to finish")
 
-            BAR_WIDTH = 40  # adjust to taste
+            BAR_WIDTH = 40
 
             # Packet count
             sent = scanner.deauther.packets_sent
             total = scanner.deauther.packet_count
-            stdscr.addstr(4, 0, f"Packets sent: {sent}/{total}")
+            stdscr.addstr(5, 0, f"Packets sent: {sent}/{total}")
 
             # Progress bar
-            if total > 0:
-                frac = sent / total
-                filled = int(frac * BAR_WIDTH)
-                bar = "#" * filled + "-" * (BAR_WIDTH - filled)
-                stdscr.addstr(5, 0, f"[{bar}] {int(frac * 100):3d}%")
-            else:
-                stdscr.addstr(5, 0, "[No clients to deauth]")
+            frac = sent / total
+            filled = int(frac * BAR_WIDTH)
+            bar = "#" * filled + "-" * (BAR_WIDTH - filled)
+            stdscr.addstr(6, 0, f"[{bar}] {int(frac * 100):3d}%")
 
             key = stdscr.getch()
             if key == ord('q'):
