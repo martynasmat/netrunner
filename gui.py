@@ -94,7 +94,8 @@ def start_gui(scanner: NetworkController) -> None:
         period = 0
         stdscr.clear()
 
-        deauth_thread = threading.Thread(target=scanner.deauth)
+        scanner.create_deauther()
+        deauth_thread = threading.Thread(target=scanner.deauther.deauth)
         deauth_thread.start()
 
         while loop:
@@ -107,14 +108,14 @@ def start_gui(scanner: NetworkController) -> None:
                 ({scanner.selected_ap.bssid})
                 {period * '.'}""")
             stdscr.addstr(
-                4, 0, f"Packet sent [{scanner.deauth_packet_count}/{scanner.max_packets}]")
+                4, 0, f"Packet sent [{scanner.deauther.packets_sent}/{scanner.deauther.packet_count}]")
             stdscr.addstr(5, 0, f"Please wait for deauthentication to finish")
             key = stdscr.getch()
             if key == ord('q'):
                 scanner.stop_all()
                 loop = False
 
-            if scanner.deauth_packet_count >= scanner.max_packets:
+            if scanner.deauther.packets_sent >= scanner.deauther.packet_count:
                 loop = False
                 handshake_menu(stdscr)
 

