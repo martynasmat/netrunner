@@ -35,6 +35,7 @@ All actions run in parallel threads, and you control them through a curses-based
 - **Dependencies:** Specified in `requirements.txt`, including:
   - Scapy  
   - curses, threading, subprocess, pathlib, time (standard library)
+- **Hardware:** A Wi-Fi adapter that supports packet injection and monitor mode.
 
 ## Usage
 
