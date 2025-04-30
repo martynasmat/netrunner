@@ -2,10 +2,10 @@ import curses
 import threading
 
 from change_channel import *
-from network_controller import *
+from network_utilities import *
 
 
-def start_gui(scanner: NetworkController) -> None:
+def start_gui(scanner: NetworkScanner) -> None:
 
     def draw_menu(stdscr) -> None:
         curses.curs_set(0)

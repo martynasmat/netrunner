@@ -11,6 +11,7 @@ from capture_manager import *
 
 class Deauther():
     """Responsible for deauthentication"""
+
     def __init__(self, ap: AccessPoint, interface_name: str) -> None:
         self.ap = ap
         self.interface_name = interface_name
@@ -38,8 +39,9 @@ class Deauther():
                 self.packets_sent += 1
 
 
-class NetworkController():
+class NetworkScanner():
     """Responsible for packet sniffing and handling"""
+
     def __init__(
             self,
             interface_name: str,
@@ -169,13 +171,15 @@ class NetworkController():
                 self.bssid_map[dest].add_client(src)
 
     def start_sniffing(self, filter: str = '') -> None:
-        sniff(
-            iface=self.interface_name,
-            prn=self.handle_packet,
-            store=False,
-            filter=filter,
-            stop_filter=lambda x: self.stop_sniff.is_set()
-        )
+        while not self.stop_sniff.is_set():
+            sniff(
+                iface=self.interface_name,
+                prn=self.handle_packet,
+                store=False,
+                filter=filter,
+                stop_filter=lambda x: self.stop_sniff.is_set(),
+                timeout=2
+            )
 
     def start_channel_hopping(self) -> None:
         change_channel(
