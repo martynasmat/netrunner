@@ -12,11 +12,11 @@ Netrunner is a Python-based tool for Wi-Fi reconnaissance and WPA/WPA2 handshake
 
 Netrunner automates three main steps:
 
-1. Scanning: Hops across 2.4 GHz channels to discover available access points (APs).
+1. Scanning: scans across 2.4 GHz channels to discover available access points (APs).
 
 2. Deauthentication: Sends IEEE 802.11 deauthentication frames to connected clients, forcing them to reconnect.
 
-3. Handshake Capture: Listens for the four-message EAPOL handshake and writes it, along with the beacon frame, to a timestamped PCAP file.
+3. Handshake Capture: Listens for the EAPOL handshake and writes it to a timestamped PCAP file.
 
 All actions run in parallel threads, and you control them through a curses-based UI.
 
